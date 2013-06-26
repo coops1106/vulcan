@@ -1,0 +1,13 @@
+*.iml
+*.ipr
+*.idea
+.project
+.classpath
+.settings
+out/
+target/
+vagrant-temp/
+build/
+.gradle
+classes/
+.idea/
