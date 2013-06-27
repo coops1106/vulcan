@@ -1,9 +1,8 @@
-package com.opencloudbrokers.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm
 
-import com.opencloudbrokers.vulcan.VirtualMachine
+import com.simplicityitself.vulcan.VirtualMachine
 import org.jclouds.compute.domain.NodeMetadata
 import org.jclouds.compute.domain.ComputeMetadata
-import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.compute.ComputeService
 import com.google.common.base.Predicate
 

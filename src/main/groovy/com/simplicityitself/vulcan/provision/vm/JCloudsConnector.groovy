@@ -1,9 +1,7 @@
-package com.opencloudbrokers.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm
 
 import org.jclouds.compute.ComputeServiceContext
-import org.jclouds.compute.ComputeServiceContextFactory
 import com.google.common.collect.ImmutableSet
-import com.google.inject.Module
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
 import org.jclouds.sshj.config.SshjSshClientModule
 import org.jclouds.ContextBuilder
@@ -24,17 +22,11 @@ class JCloudsConnector {
     println "Have identity = ${identity != null && identity.length() > 0}"
     println "Have credential = ${credential != null && credential.length() > 0}"
 
-
     return ContextBuilder.newBuilder(providerId)
               .modules(ImmutableSet.of(new SshjSshClientModule(), new EnterpriseConfigurationModule(), new SLF4JLoggingModule()))
               .credentials(identity, credential)
               .buildView(ComputeServiceContext)
 
-//    new ComputeServiceContextFactory().createContext(providerId,
-//        identity,
-//        credential,
-//        ImmutableSet.<Module> of(new SLF4JLoggingModule(),
-//            new SshjSshClientModule()));
   }
 
   //only using system props.

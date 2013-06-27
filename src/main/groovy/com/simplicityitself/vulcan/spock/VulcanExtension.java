@@ -1,4 +1,4 @@
-package com.opencloudbrokers.vulcan.spock;
+package com.simplicityitself.vulcan.spock;
 
 import org.spockframework.runtime.extension.AbstractAnnotationDrivenExtension;
 import org.spockframework.runtime.model.FeatureInfo;

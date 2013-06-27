@@ -1,6 +1,6 @@
-package com.opencloudbrokers.vulcan.test;
+package com.simplicityitself.vulcan.test;
 
-import com.opencloudbrokers.vulcan.VirtualMachine;
+import com.simplicityitself.vulcan.VirtualMachine;
 
 
 import java.util.concurrent.TimeoutException;
@@ -82,9 +82,6 @@ public class InfrastructureChecks {
 
   /*
    processInPIDFileIsRunning
-   processWithNameIsRunning
-
-   textFile
    */
 
   //TODO, other stuff...

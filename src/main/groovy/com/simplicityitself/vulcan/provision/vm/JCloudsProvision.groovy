@@ -1,26 +1,16 @@
-package com.opencloudbrokers.vulcan.provision.vm;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Module;
-import org.jclouds.compute.ComputeServiceContext;
-import org.jclouds.compute.ComputeServiceContextFactory;
-
+package com.simplicityitself.vulcan.provision.vm;
 
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.OsFamily;
 import org.jclouds.compute.domain.Template
 import org.jclouds.compute.domain.TemplateBuilder;
-import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
-import org.jclouds.sshj.config.SshjSshClientModule;
-
 
 import groovy.util.logging.Slf4j
 import org.jclouds.compute.options.TemplateOptions
 import java.util.concurrent.TimeoutException
-import com.opencloudbrokers.vulcan.test.InfrastructureChecks
-import com.opencloudbrokers.vulcan.VirtualMachine
+import com.simplicityitself.vulcan.test.InfrastructureChecks
+import com.simplicityitself.vulcan.VirtualMachine
 import org.jclouds.compute.ComputeService
-import org.jclouds.ec2.compute.options.EC2TemplateOptions;
 
 @Slf4j
 public class JCloudsProvision implements VirtualMachineProvisioner {
@@ -84,11 +74,12 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
               .os64Bit(true)
               .osFamily(OsFamily.UBUNTU)
               .options(TemplateOptions.Builder.inboundPorts(vm.openPorts as int[])
-              .authorizePublicKey(new File(publicKey).text))
+                       .authorizePublicKey(new File(publicKey).text))
               .osVersionMatches("10.04")
               .minCores(vm.cpuCount)
               .minDisk(vm.disk)
               .minRam(vm.memory)
+
 
           if (System.properties["vm.${vm.name}.location"]) {
             log.info("VM ${vm.name} loaded to specific location ${System.properties["vm.${vm.name}.location"]}")

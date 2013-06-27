@@ -1,4 +1,4 @@
-package com.opencloudbrokers.vulcan;
+package com.simplicityitself.vulcan;
 
 public class VulcanException extends RuntimeException {
 

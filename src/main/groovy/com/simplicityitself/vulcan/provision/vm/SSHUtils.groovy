@@ -1,8 +1,7 @@
-package com.opencloudbrokers.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm
 
-import com.opencloudbrokers.vulcan.VirtualMachine.CommandReturn
-import com.opencloudbrokers.vulcan.VirtualMachine
-import com.opencloudbrokers.vulcan.provision.vm.VirtualMachineDelegate
+import com.simplicityitself.vulcan.VirtualMachine.CommandReturn
+import com.simplicityitself.vulcan.VirtualMachine
 
 class SSHUtils {
 

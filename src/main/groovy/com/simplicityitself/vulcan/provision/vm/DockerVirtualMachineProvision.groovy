@@ -1,11 +1,10 @@
-package com.opencloudbrokers.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm
 
+import com.simplicityitself.vulcan.VirtualMachine
 import groovy.util.logging.Slf4j
-import com.opencloudbrokers.vulcan.VirtualMachine
-
 
 @Slf4j
-class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
+class DockerVirtualMachineProvision implements VirtualMachineProvisioner {
 
   File vagrantBaseDir
   File specificationDir
@@ -16,7 +15,7 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
   int octet = 10
   private List<VirtualMachine> virtualMachines = []
 
-  VagrantVirtualMachineProvision(String specificationName) {
+  DockerVirtualMachineProvision(String specificationName) {
     setupVagrantStorage()
 
     def privateKeyValue = getClass().getResourceAsStream("/vagrant.key").text
@@ -48,7 +47,7 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
 
   void disconnect() {
     if (System.properties["keeprunning"] != null) {
-      com.opencloudbrokers.vulcan.provision.vm.VagrantVirtualMachineProvision.log.info "Keeping running by user request"
+      DockerVirtualMachineProvision.log.info "Keeping running by user request"
       return
     }
 
@@ -125,7 +124,7 @@ end
 
     if (!vagrantBaseDir) {
       vagrantBaseDir = new File("${baseDir.absolutePath}/vagrant-temp")
-      com.opencloudbrokers.vulcan.provision.vm.VagrantVirtualMachineProvision.log.info "Vagrant resources at $vagrantBaseDir"
+      DockerVirtualMachineProvision.log.info "Vagrant resources at $vagrantBaseDir"
     }
   }
 
@@ -137,7 +136,7 @@ end
     } catch (Exception ex) {
       throw new IllegalStateException("Vagrant is not installed.  Test cannot be run without vagrant support.")
     }
-    com.opencloudbrokers.vulcan.provision.vm.VagrantVirtualMachineProvision.log.info "Vagrant is installed and functional"
+    DockerVirtualMachineProvision.log.info "Vagrant is installed and functional"
   }
 
   void addFixtureForVm(VirtualMachine vm, Closure fixture) {

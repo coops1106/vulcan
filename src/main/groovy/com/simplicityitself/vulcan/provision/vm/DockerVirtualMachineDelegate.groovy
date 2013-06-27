@@ -1,10 +1,10 @@
-package com.opencloudbrokers.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm
 
-import com.opencloudbrokers.vulcan.VirtualMachine
+import com.simplicityitself.vulcan.VirtualMachine
 import groovy.util.logging.Slf4j
 
 @Slf4j
-class VagrantVirtualMachineDelegate implements VirtualMachineDelegate {
+class DockerVirtualMachineDelegate implements VirtualMachineDelegate {
 
   String ipAddress
   File privateKey
@@ -25,7 +25,7 @@ class VagrantVirtualMachineDelegate implements VirtualMachineDelegate {
     if (overrideUsername) {
       return overrideUsername;
     }
-    return "vagrant"
+    return "root"
   }
 
   @Override

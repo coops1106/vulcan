@@ -1,4 +1,4 @@
-package com.opencloudbrokers.vulcan.spock
+package com.simplicityitself.vulcan.spock
 
 import org.spockframework.runtime.AbstractRunListener
 import org.spockframework.runtime.model.ErrorInfo
