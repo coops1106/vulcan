@@ -1,4 +1,4 @@
-package com.simplicityitself.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm.jclouds
 
 import com.simplicityitself.vulcan.VirtualMachine
 import org.jclouds.compute.domain.NodeMetadata

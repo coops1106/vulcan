@@ -1,6 +1,30 @@
 apply plugin:'groovy'
 apply plugin:'maven'
 
+group="com.simplicityitself.vulcan"
+version="0.1-SNAPSHOT"
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+//  mavenRepo url: 'http://maven.springframework.org/milestone/'
+}
+
+dependencies {
+  compile 'org.codehaus.groovy:groovy-all:2.0.8'
+  compile 'org.spockframework:spock-core:0.7-groovy-2.0'
+
+  compile 'com.jcraft:jsch:0.1.50'
+  compile 'org.jclouds:jclouds-all:1.6.0'
+  compile 'org.jclouds.driver:jclouds-sshj:1.6.0'
+  compile 'org.jclouds.driver:jclouds-enterprise:1.6.0'
+  compile 'org.apache.ant:ant-jsch:1.9.1'
+  compile 'org.slf4j:slf4j-api:1.7.5'
+//  compile 'dnsjava:dnsjava:2.1.1'
+  //compile 'org.cloudfoundry:cloudfoundry-client-lib:0.8.3.BUILD-SNAPSHOT'
+
+}
+
 task wrapper(type: Wrapper) {                                                                                                                                                                                        
   gradleVersion = '1.6'
 }

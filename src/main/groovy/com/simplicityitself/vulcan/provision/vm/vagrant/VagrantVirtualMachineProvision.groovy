@@ -1,10 +1,13 @@
-package com.simplicityitself.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm.vagrant
 
-import com.simplicityitself.vulcan.VirtualMachine
+import com.simplicityitself.vulcan.VirtualMachineImage
+import com.simplicityitself.vulcan.provision.vm.VirtualMachineProvisioner
 import groovy.util.logging.Slf4j
+import com.simplicityitself.vulcan.VirtualMachine
+
 
 @Slf4j
-class DockerVirtualMachineProvision implements VirtualMachineProvisioner {
+class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
 
   File vagrantBaseDir
   File specificationDir
@@ -15,7 +18,7 @@ class DockerVirtualMachineProvision implements VirtualMachineProvisioner {
   int octet = 10
   private List<VirtualMachine> virtualMachines = []
 
-  DockerVirtualMachineProvision(String specificationName) {
+  VagrantVirtualMachineProvision(String specificationName) {
     setupVagrantStorage()
 
     def privateKeyValue = getClass().getResourceAsStream("/vagrant.key").text
@@ -47,7 +50,7 @@ class DockerVirtualMachineProvision implements VirtualMachineProvisioner {
 
   void disconnect() {
     if (System.properties["keeprunning"] != null) {
-      DockerVirtualMachineProvision.log.info "Keeping running by user request"
+      log.info "Keeping running by user request"
       return
     }
 
@@ -56,6 +59,51 @@ class DockerVirtualMachineProvision implements VirtualMachineProvisioner {
     ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true) {
       arg(line:"halt -f")
     }
+  }
+
+  @Override
+  boolean isRunning(VirtualMachine vm) {
+    def ant = new AntBuilder()
+
+    def ret = ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true, outputProperty:"output") {
+      arg(line:"status ${vm.name}")
+    }
+
+    ant.project.properties.output.contains "running"
+  }
+
+  @Override
+  void deleteFromProvider(VirtualMachine vm) {
+    def ant = new AntBuilder()
+
+    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true) {
+      arg(line:"halt -f ${vm.name}")
+    }
+  }
+
+  @Override
+  VirtualMachineImage generateProviderImageFrom(String imageName, VirtualMachine vm) {
+    //TODO, handle images properly
+    return new VirtualMachineImage(id: vm.identifier, tags:[])
+  }
+
+  @Override
+  void deleteFromProvider(VirtualMachineImage virtualMachineImage) {
+    //TODO, handle images properly
+
+  }
+
+  @Override
+  VirtualMachineImage getImage(String id) {
+    //TODO, handle images properly
+    return new VirtualMachineImage(id:id)
+  }
+
+  @Override
+  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag) {
+    //TODO, handle images properly
+    image.tags << tag
+    return image
   }
 
   String configForVm(VirtualMachine virtualMachine) {
@@ -124,7 +172,7 @@ end
 
     if (!vagrantBaseDir) {
       vagrantBaseDir = new File("${baseDir.absolutePath}/vagrant-temp")
-      DockerVirtualMachineProvision.log.info "Vagrant resources at $vagrantBaseDir"
+      log.info "Vagrant resources at $vagrantBaseDir"
     }
   }
 
@@ -136,9 +184,16 @@ end
     } catch (Exception ex) {
       throw new IllegalStateException("Vagrant is not installed.  Test cannot be run without vagrant support.")
     }
-    DockerVirtualMachineProvision.log.info "Vagrant is installed and functional"
+    log.info "Vagrant is installed and functional"
   }
 
+  /**
+   * TODO, generify.
+   *
+   * This adds a closure that is executed to bring the VM into a certain state, intended to be active
+   * for local or test environments that need to be matched with a production state.
+   * Should be made generic and have a better selection mechanism for when to be fired.
+   */
   void addFixtureForVm(VirtualMachine vm, Closure fixture) {
     if (virtualMachines.contains(vm)) {
       log.info ("Fixture passed for provision against VM ${vm.name}, running against VM")

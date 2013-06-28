@@ -8,6 +8,7 @@ public class VulcanExtension extends AbstractAnnotationDrivenExtension<VulcanTra
 
   @Override
   public void visitSpecAnnotation(VulcanTrade annotation, SpecInfo spec) {
+
     VulcanInterceptor v = new VulcanInterceptor();
     for (FeatureInfo feature: spec.getAllFeatures()) {
       spec.addListener(v);

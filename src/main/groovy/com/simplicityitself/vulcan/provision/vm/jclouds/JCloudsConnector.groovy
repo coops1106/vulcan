@@ -1,5 +1,6 @@
-package com.simplicityitself.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm.jclouds
 
+import org.jclouds.aws.ec2.reference.AWSEC2Constants
 import org.jclouds.compute.ComputeServiceContext
 import com.google.common.collect.ImmutableSet
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
@@ -22,9 +23,16 @@ class JCloudsConnector {
     println "Have identity = ${identity != null && identity.length() > 0}"
     println "Have credential = ${credential != null && credential.length() > 0}"
 
+    Properties overrides = new Properties();
+
+    // choose only amazon images that are ebs-backed
+    overrides.setProperty(AWSEC2Constants.PROPERTY_EC2_AMI_QUERY,
+            "state=available;image-type=machine;root-device-type=ebs");
+
     return ContextBuilder.newBuilder(providerId)
               .modules(ImmutableSet.of(new SshjSshClientModule(), new EnterpriseConfigurationModule(), new SLF4JLoggingModule()))
               .credentials(identity, credential)
+              .overrides(overrides)
               .buildView(ComputeServiceContext)
 
   }

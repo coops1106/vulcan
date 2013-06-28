@@ -13,8 +13,13 @@ import java.util.concurrent.TimeoutException;
  */
 public class InfrastructureChecks {
 
+  public static void exec(VirtualMachine virtualMachine, String command) {
+    virtualMachine.executeCommandAndReturn(command).getSysOutput();
+  }
   public static String commandOutput(VirtualMachine virtualMachine, String command) {
-    return virtualMachine.executeCommandAndReturn(command).getSysOutput();
+    tryFor30s {
+      virtualMachine.executeCommandAndReturn(command).getSysOutput();
+    }
   }
 
   public static boolean fileExists(VirtualMachine virtualMachine, String filename) {
@@ -44,14 +49,14 @@ public class InfrastructureChecks {
     commandOutput(vm, "echo \"$value\" | sudo tee -a $file");
   }
 
-  public static boolean tryFor30s(Closure exec) {
+  public static def tryFor30s(Closure exec) {
     return tryTillTimeout(30000, exec)
   }
-  public static boolean tryFor5min(Closure exec) {
+  public static def tryFor5min(Closure exec) {
     return tryTillTimeout(1000 * 60 * 5, exec)
   }
 
-  public static boolean tryTillTimeout(int timeout, Closure exec) {
+  public static def tryTillTimeout(int timeout, Closure exec) {
     def ret
 
     try {

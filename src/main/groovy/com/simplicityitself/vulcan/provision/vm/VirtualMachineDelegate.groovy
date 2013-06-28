@@ -13,8 +13,6 @@ public interface VirtualMachineDelegate {
 
   String getIpAddressToConnectTo();
   int getPortToConnectTo();
-  boolean isRunning();
   String getProviderName();
-  void delete();
   String getIdentifier();
 }

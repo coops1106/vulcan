@@ -1,10 +1,12 @@
-package com.simplicityitself.vulcan.provision.vm
+package com.simplicityitself.vulcan.provision.vm.vagrant
 
 import com.simplicityitself.vulcan.VirtualMachine
+import com.simplicityitself.vulcan.provision.vm.SSHUtils
+import com.simplicityitself.vulcan.provision.vm.VirtualMachineDelegate
 import groovy.util.logging.Slf4j
 
 @Slf4j
-class DockerVirtualMachineDelegate implements VirtualMachineDelegate {
+class VagrantVirtualMachineDelegate implements VirtualMachineDelegate {
 
   String ipAddress
   File privateKey
@@ -25,7 +27,7 @@ class DockerVirtualMachineDelegate implements VirtualMachineDelegate {
     if (overrideUsername) {
       return overrideUsername;
     }
-    return "root"
+    return "vagrant"
   }
 
   @Override
@@ -44,18 +46,8 @@ class DockerVirtualMachineDelegate implements VirtualMachineDelegate {
   }
 
   @Override
-  boolean isRunning() {
-    return true;
-  }
-
-  @Override
   String getProviderName() {
     return "virtualbox"
-  }
-
-  @Override
-  void delete() {
-    log.info "delete() called for VM $ipAddress"
   }
 
   @Override
