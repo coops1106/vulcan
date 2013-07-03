@@ -13,5 +13,5 @@ public interface VirtualMachineProvisioner {
   VirtualMachineImage generateProviderImageFrom(String imageName, VirtualMachine vm)
   void deleteFromProvider(VirtualMachineImage virtualMachineImage)
   VirtualMachineImage getImage(String id)
-  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag)
+  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag, String value)
 }

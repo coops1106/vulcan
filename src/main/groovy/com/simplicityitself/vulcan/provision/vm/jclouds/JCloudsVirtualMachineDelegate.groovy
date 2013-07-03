@@ -17,11 +17,11 @@ class JCloudsVirtualMachineDelegate implements VirtualMachineDelegate {
   final String providerName
   final String identifier
 
-  JCloudsVirtualMachineDelegate(NodeMetadata metaData, File tk, ComputeService computeService) {
+  JCloudsVirtualMachineDelegate(NodeMetadata metaData, File tk, ComputeService computeService, String providerName) {
     this.metaData = metaData;
     this.tk = tk
 
-    providerName = metaData.getProviderId()
+    this.providerName = providerName
     identifier = metaData.id
 
     //TODO, this is extracting the private key and then writing it locally, is this secure or wise?
@@ -45,7 +45,8 @@ class JCloudsVirtualMachineDelegate implements VirtualMachineDelegate {
     if (overrideUsername) {
       return overrideUsername;
     }
-    if (metaData.credentials.user == "root" && metaData.operatingSystem.family == OsFamily.UBUNTU) {
+//    if (metaData.credentials.user == "root" && metaData.operatingSystem.family == OsFamily.UBUNTU) {
+    if (metaData.credentials.user == "root") {
       return "ubuntu"
     }
     return metaData.credentials.user

@@ -100,7 +100,7 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
   }
 
   @Override
-  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag) {
+  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag, String value) {
     //TODO, handle images properly
     image.tags << tag
     return image

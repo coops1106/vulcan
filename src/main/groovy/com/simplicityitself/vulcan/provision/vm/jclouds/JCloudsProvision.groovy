@@ -22,6 +22,7 @@ import org.jclouds.compute.domain.TemplateBuilder;
 import groovy.util.logging.Slf4j
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.ec2.compute.options.EC2TemplateOptions
+import org.jclouds.ec2.util.TagFilterBuilder
 
 import java.util.concurrent.TimeoutException
 import com.simplicityitself.vulcan.test.InfrastructureChecks
@@ -45,6 +46,15 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
     spec = specificationName.toLowerCase()
     tk.delete()
     tk.mkdirs()
+  }
+
+  AWSEC2Client getClient(name) {
+    //TODO, this is how to access the client directly.
+
+
+
+    AWSEC2Client client = ContextBuilder.newBuilder(name).buildApi(AWSEC2Client)
+
   }
 
   void provision(List virtualMachines) {
@@ -91,7 +101,8 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
       vm.delegate = new JCloudsVirtualMachineDelegate(
               metadata,
               tk,
-              context.computeService)
+              context.computeService,
+              JCloudsConnector.getProvider(vm.name))
       if (System.properties["vm.${vm.name}.user"]) {
         vm.delegate.userName = System.properties["vm.${vm.name}.user"]
         log.info("Using login ${vm.delegate.userName}@${vm.name}")
@@ -99,7 +110,22 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
     } else {
 
       //TODO, specifically pick the image to use.
-      TemplateBuilder tb = context.computeService.templateBuilder()
+      TemplateBuilder tb
+
+      log.info "Mem [$vm.memory] cpu [${vm.cpuCount}] disk[${vm.disk}]"
+
+      if (vm.image) {
+        log.info "Loading existing image ${vm.image.id}"
+        tb = context.computeService.templateBuilder()
+                .imageId(vm.image.id)
+                .options(TemplateOptions.Builder.inboundPorts(vm.openPorts as int[])
+                .authorizePublicKey(new File(publicKey).text))
+                .minCores(vm.cpuCount)
+                .minDisk(vm.disk)
+                .minRam(vm.memory)
+      } else {
+        log.info "Building VM from provider image"
+        tb = context.computeService.templateBuilder()
               .os64Bit(true)
               .osFamily(OsFamily.UBUNTU)
               .options(TemplateOptions.Builder.inboundPorts(vm.openPorts as int[])
@@ -108,6 +134,7 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
               .minCores(vm.cpuCount)
               .minDisk(vm.disk)
               .minRam(vm.memory)
+      }
 
       if (System.properties["vm.${vm.name}.location"]) {
         log.info("VM ${vm.name} loaded to specific location ${System.properties["vm.${vm.name}.location"]}")
@@ -134,7 +161,8 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
 
         log.info "VM Created with login user ${metadata.credentials.user}/ ${metadata.credentials.credential}, have installed local key, provider key (${metadata.credentials.privateKey != null})"
 
-        vm.delegate = new JCloudsVirtualMachineDelegate(metadata, tk, context.computeService)
+        vm.delegate = new JCloudsVirtualMachineDelegate(metadata, tk, context.computeService,
+                JCloudsConnector.getProvider(vm.name))
       }
       vmToContext[vm] = context
 
@@ -174,20 +202,24 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
   @Override
   VirtualMachineImage generateProviderImageFrom(String imageName, VirtualMachine vm) {
     VirtualMachineImage ret = new VirtualMachineImage()
+    log.info "Instructed to generate new image named $imageName from existing VM ${vm.identifier}"
 
     withContext(vm) { ComputeServiceContext context ->
 
-      //TODO, this is how to access the client directly.
-      //AWSEC2Client client = ContextBuilder.newBuilder(vm.providerName).buildApi(AWSEC2Client)
-
       ImageTemplate template = context.computeService.imageExtension.get().buildImageTemplateFromNode(imageName, vm.identifier)
+
+      log.info("Template created, requesting image generation")
+
       ListenableFuture<Image> future = context.computeService.imageExtension.get().createImage(template)
 
       Image image = future.get()
 
+      log.info("Image created, storing reference [${image.id}] with OS [${image.operatingSystem}]")
+
       imageToContext[ret] = context
       ret.tags = image.tags
-      ret.providerId = image.providerId
+      ret.providerId = vm.providerName
+      ret.internalId = image.providerId
       ret.id = image.id
     }
     ret
@@ -195,9 +227,14 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
 
   @Override
   void deleteFromProvider(VirtualMachineImage virtualMachineImage) {
-    withContext(virtualMachineImage) { ComputeServiceContext context ->
-      context.computeService.imageExtension.get().deleteImage(virtualMachineImage.id)
-      imageToContext.remove(virtualMachineImage)
+    try {
+      log.info "Requested to remove image ${virtualMachineImage.id}"
+      withContext(virtualMachineImage) { ComputeServiceContext context ->
+        context.computeService.imageExtension.get().deleteImage(virtualMachineImage.id)
+        imageToContext.remove(virtualMachineImage)
+      }
+    } catch (Exception ex) {
+      log.error "Eror when deleting image ${virtualMachineImage.id} from provider", ex
     }
   }
 
@@ -207,27 +244,28 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
   }
 
   @Override
-  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag) {
-    /*
-    TODO, this recreates the entire image in order to add a tag. This seems wasteful...
-     */
-    VirtualMachineImage ret = new VirtualMachineImage()
+  VirtualMachineImage addTagToImage(VirtualMachineImage image, String tag, String value) {
 
     withContext(image) { ComputeServiceContext context ->
-      def old = context.computeService.getImage(image.id)
-      def tags = new HashSet(old.tags)
-      tags << tag
 
-      Image newImage = ImageBuilder.fromImage(old).tags(["tag"]).build()
+      log.info "Getting provider client for ${image.providerId}"
 
-      context.computeService.imageExtension.get().deleteImage(image.id)
+      //TODO, extract this into a per provider strategy.
 
-      ret.tags = newImage.tags
-      ret.providerId = newImage.providerId
-      ret.id = newImage.id
+      AWSEC2Client client = JCloudsConnector.getProviderApi(image.providerId, AWSEC2Client)
+
+      log.info "Adding Tag ${tag}=$value to machine image ${image.internalId}"
+      client.tagApi.get().applyToResources([(tag):value], [image.internalId])
+
+      def tags = client.getTagApi().get().filter(
+              new TagFilterBuilder().image().resourceId(image.internalId).build())
+
+      image.tags = tags.collect {
+        it.key
+      } as String[]
     }
 
-    return ret
+    return image
   }
 
   void awaitBoot(List<VirtualMachine> vms) {
