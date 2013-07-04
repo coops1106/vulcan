@@ -21,10 +21,16 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
   VagrantVirtualMachineProvision(String specificationName) {
     setupVagrantStorage()
 
-    def privateKeyValue = getClass().getResourceAsStream("/vagrant.key").text
-
+    def privateKeyValue = getClass().getResourceAsStream("/vagrant.key")?.text
+    if (!privateKeyValue) {
+      def f = new File("src/resources/vagrant.key")
+      if (f.exists()) {
+        privateKeyValue = f.text
+      }
+    }
     vagrantKey = File.createTempFile("vagrant", "insecurePrivateKey")
     vagrantKey << privateKeyValue
+
 
     specificationDir = new File("${vagrantBaseDir}/${specificationName}")
     specificationDir.mkdirs()
@@ -32,6 +38,11 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
     downloadBaseBox()
 
     ensureVagrantWorks()
+  }
+
+  @Override
+  VirtualMachineImage findImageWithTags(String... tags) {
+    return null  //To change body of implemented methods use File | Settings | File Templates.
   }
 
   void provision(List <VirtualMachine> virtualMachines) {

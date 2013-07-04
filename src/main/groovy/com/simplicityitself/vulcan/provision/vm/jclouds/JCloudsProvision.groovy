@@ -48,12 +48,8 @@ public class JCloudsProvision implements VirtualMachineProvisioner {
     tk.mkdirs()
   }
 
-  AWSEC2Client getClient(name) {
-    //TODO, this is how to access the client directly.
-
-
-
-    AWSEC2Client client = ContextBuilder.newBuilder(name).buildApi(AWSEC2Client)
+  @Override
+  VirtualMachineImage findImageWithTags(String... tags) {
 
   }
 
