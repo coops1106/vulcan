@@ -32,7 +32,7 @@ public class InfrastructureChecks {
     return commandOutput(virtualMachine, "which " + commandName).trim().contains(commandName);
   }
   public static boolean portOpen(VirtualMachine virtualMachine, int port) {
-    return commandOutput(virtualMachine, "netstat -ntl | grep \":" + port + " \"").length() > 0;
+    return commandOutput(virtualMachine, "netstat -ntl | findStr \":" + port + " \"").length() > 0;
   }
   public static String getFromHttp(VirtualMachine vm, int port, String url) {
     return new URL("http://${vm.ipAddressToConnectTo}:${port}${url}").text

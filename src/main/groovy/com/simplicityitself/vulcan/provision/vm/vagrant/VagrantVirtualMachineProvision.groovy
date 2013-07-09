@@ -11,16 +11,46 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
 
   File vagrantBaseDir
   File specificationDir
-
   File vagrantKey
 
   String IP_ROOT="192.168.18."
   int octet = 10
   private List<VirtualMachine> virtualMachines = []
+  Boolean osIsWindows
+  String vagrantBatDir
+  private String command
+
+  //ToDo DaCo...remove. Temp for test purposes
+  VagrantVirtualMachineProvision(){}
 
   VagrantVirtualMachineProvision(String specificationName) {
+    determineOS()
     setupVagrantStorage()
+    setupVagrantKey()
+    setupSpecificationDir(specificationName)
+    downloadBaseBox("vulcan", "http://dl.dropbox.com/u/1537815/precise64.box")
+    downloadBaseBox("lucid64", "http://files.vagrantup.com/lucid64.box")
+    ensureVagrantWorks()
+  }
 
+  def determineOS() {
+    def ant = new AntBuilder()
+    ant.condition(property:"winOS"){
+      os(family:"windows")
+    }
+    osIsWindows = ant.project.getProperties().get("winOS") != null
+  }
+
+  void setupVagrantStorage() {
+    File baseDir = new File(".")
+
+    if (!vagrantBaseDir) {
+      vagrantBaseDir = new File("${baseDir.absolutePath}/vagrant-temp")
+      log.info "Vagrant resources at $vagrantBaseDir"
+    }
+  }
+
+  def void setupVagrantKey() {
     def privateKeyValue = getClass().getResourceAsStream("/vagrant.key")?.text
     if (!privateKeyValue) {
       def f = new File("src/resources/vagrant.key")
@@ -30,14 +60,29 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
     }
     vagrantKey = File.createTempFile("vagrant", "insecurePrivateKey")
     vagrantKey << privateKeyValue
+  }
 
-
+  def setupSpecificationDir(String specificationName) {
     specificationDir = new File("${vagrantBaseDir}/${specificationName}")
     specificationDir.mkdirs()
+  }
 
-    downloadBaseBox()
+  def downloadBaseBox(baseBoxId, baseBoxLocation) {
+    AntBuilder ant = new AntBuilder()
+    if (!isBaseBoxInstalled(baseBoxId)) {
+      log.info "Downloading basebox ${baseBoxId} from location ${baseBoxLocation}"
+      runVagrantCommand("box add ${baseBoxId} ${baseBoxLocation}", ant)
+    } else {
+      log.info "Basebox ${baseBoxId} already installed"
+    }
+  }
 
-    ensureVagrantWorks()
+  def boolean isBaseBoxInstalled(baseBoxId) {
+    AntBuilder ant = new AntBuilder()
+    runVagrantCommand("box list", ant)
+    String boxes =  ant.project.properties.cmdOut
+    def listOfBoxes = boxes.tokenize()
+    listOfBoxes.contains(baseBoxId)
   }
 
   @Override
@@ -65,22 +110,14 @@ class VagrantVirtualMachineProvision implements VirtualMachineProvisioner {
       return
     }
 
-    def ant = new AntBuilder()
-
-    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true) {
-      arg(line:"halt -f")
-    }
+    runVagrantCommand("halt -f")
   }
 
   @Override
   boolean isRunning(VirtualMachine vm) {
     def ant = new AntBuilder()
-
-    def ret = ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true, outputProperty:"output") {
-      arg(line:"status ${vm.name}")
-    }
-
-    ant.project.properties.output.contains "running"
+    runVagrantCommand("status ${vm.name}", ant)
+    ant.project.properties.cmdOut.contains "running"
   }
 
   @Override
@@ -157,45 +194,53 @@ end
   }
 
   def startEnvironment() {
-    def ant = new AntBuilder()
-    //TODO, snapshot management.
-    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true) {
-      arg(line:"destroy -f")
-    }
-    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true) {
-      arg(line:"up")
-    }
+    runVagrantCommand("destroy -f")
+    runVagrantCommand("up")
   }
 
-  def downloadBaseBox() {
-    def ant = new AntBuilder()
-
-    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:false) {
-      arg(line:"box add vulcan http://dl.dropbox.com/u/1537815/precise64.box")
-    }
-    ant.exec(executable:"vagrant", dir:specificationDir, failonerror:false) {
-      arg(line:"box add lucid64 http://files.vagrantup.com/lucid64.box")
-    }
+  private void runVagrantCommand(command) {
+    AntBuilder ant = new AntBuilder()
+    runVagrantCommand(command, ant)
   }
 
-  void setupVagrantStorage() {
-    File baseDir = new File(".")
-
-    if (!vagrantBaseDir) {
-      vagrantBaseDir = new File("${baseDir.absolutePath}/vagrant-temp")
-      log.info "Vagrant resources at $vagrantBaseDir"
+  private void runVagrantCommand(command, ant) throws IllegalStateException {
+    if (osIsWindows) {
+      ant.exec(outputproperty:"cmdOut",
+          errorproperty: "cmdErr",
+          resultproperty:"cmdExit",
+          executable: "cmd",
+          dir: specificationDir,
+          failonerror: false) {
+        arg(value: "/c")
+        arg(path: vagrantBatDir)
+        arg(line: command)
+      }
+    } else {
+      ant.exec(executable: "vagrant", dir: specificationDir, failonerror: false, resultproperty:"cmdExit") {
+        arg(line: command)
+      }
     }
   }
 
   void ensureVagrantWorks() {
-    def ant = new AntBuilder()
-    //test if vagrant is installed and available.
-    try {
-      ant.exec(executable:"vagrant", dir:specificationDir, failonerror:true)
-    } catch (Exception ex) {
-      throw new IllegalStateException("Vagrant is not installed.  Test cannot be run without vagrant support.")
-    }
+    runVagrantCommand("-v")
     log.info "Vagrant is installed and functional"
+  }
+
+  String getVagrantBatDir() {
+    if (vagrantBatDir == null) {
+      def env = System.getenv()
+      def paths = env['Path'].tokenize(';')
+      File tempFile
+      for (String path : paths) {
+        tempFile = new File(path + "\\vagrant.bat")
+        if (tempFile.exists()) {
+          vagrantBatDir = tempFile.getAbsolutePath()
+          break
+        }
+      }
+    }
+    vagrantBatDir
   }
 
   /**
